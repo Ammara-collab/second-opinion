@@ -13,7 +13,7 @@ app = Flask(__name__)
 def _chat(system: str, user: str) -> str:
     """Single blocking chat completion via Gemini. Returns the assistant text."""
     model = genai.GenerativeModel(
-        model_name="gemini-2.0-flash",
+        model_name="gemini-3.8-flash",
         system_instruction=system,
     )
     resp = model.generate_content(

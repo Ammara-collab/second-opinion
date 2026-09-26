@@ -60,7 +60,7 @@ python app.py
 | Layer | Technology |
 |---|---|
 | Backend | Python 3, Flask |
-| LLM | Google Gemini API (`gemini-2.0-flash`) |
+| LLM | Google Gemini API (`gemini-3.8-flash`) |
 | Concurrency | `concurrent.futures.ThreadPoolExecutor` (3 parallel agents) |
 | Frontend | Vanilla HTML/CSS/JS (no build step) |
 
