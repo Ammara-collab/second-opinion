@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SecondOpinion</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+      background: #0d1117;
+      color: #c9d1d9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 16px 64px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    header h1 {
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: #e6edf3;
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      margin-top: 8px;
+      font-size: 0.95rem;
+      color: #8b949e;
+    }
+
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 28px 32px;
+      width: 100%;
+      max-width: 760px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 200px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #c9d1d9;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.88rem;
+      line-height: 1.55;
+      padding: 12px 14px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    textarea:focus { border-color: #388bfd; }
+
+    .row {
+      display: flex;
+      gap: 16px;
+      margin-top: 18px;
+      align-items: flex-end;
+    }
+
+    .field { flex: 1; }
+
+    select {
+      width: 100%;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #c9d1d9;
+      font-size: 0.92rem;
+      padding: 9px 12px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    select:focus { border-color: #388bfd; }
+
+    button#checkBtn {
+      background: #238636;
+      border: 1px solid #2ea043;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 9px 24px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+
+    button#checkBtn:hover { background: #2ea043; }
+    button#checkBtn:disabled { background: #21262d; color: #484f58; cursor: not-allowed; border-color: #30363d; }
+
+    /* Results */
+    #results {
+      display: none;
+      width: 100%;
+      max-width: 760px;
+      margin-top: 24px;
+    }
+
+    .score-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 28px 32px;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+
+    .score-number {
+      font-size: 5rem;
+      font-weight: 800;
+      line-height: 1;
+      min-width: 120px;
+      text-align: center;
+    }
+
+    .score-number.green  { color: #3fb950; }
+    .score-number.yellow { color: #d29922; }
+    .score-number.red    { color: #f85149; }
+
+    .score-meta { flex: 1; }
+
+    .verdict {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #e6edf3;
+      margin-bottom: 4px;
+    }
+
+    .verdict-sub {
+      font-size: 0.88rem;
+      color: #8b949e;
+    }
+
+    /* Contradictions */
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 24px 0 10px;
+    }
+
+    .contradictions-list {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 16px 20px;
+      list-style: none;
+    }
+
+    .contradictions-list li {
+      padding: 6px 0;
+      border-bottom: 1px solid #21262d;
+      font-size: 0.93rem;
+      color: #c9d1d9;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .contradictions-list li:last-child { border-bottom: none; }
+
+    .contradiction-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f85149;
+      flex-shrink: 0;
+      margin-top: 6px;
+    }
+
+    /* Collapsible panels */
+    .panels { display: flex; flex-direction: column; gap: 10px; }
+
+    details {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    details[open] { border-color: #388bfd44; }
+
+    summary {
+      padding: 14px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.93rem;
+      color: #e6edf3;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+
+    summary::-webkit-details-marker { display: none; }
+
+    summary::after {
+      content: "▸";
+      font-size: 0.8rem;
+      color: #8b949e;
+      transition: transform 0.15s;
+    }
+
+    details[open] summary::after { transform: rotate(90deg); }
+
+    .panel-body {
+      padding: 0 20px 18px;
+      font-size: 0.92rem;
+      line-height: 1.65;
+      color: #c9d1d9;
+      border-top: 1px solid #21262d;
+      padding-top: 14px;
+    }
+
+    /* Error */
+    #error {
+      display: none;
+      margin-top: 16px;
+      background: #2d1010;
+      border: 1px solid #6e1a1a;
+      border-radius: 6px;
+      color: #f85149;
+      padding: 10px 16px;
+      font-size: 0.9rem;
+      width: 100%;
+      max-width: 760px;
+    }
+
+    /* Demo badge */
+    .demo-badge {
+      display: none;
+      margin-top: 12px;
+      background: #1f2d1f;
+      border: 1px solid #2ea043;
+      border-radius: 4px;
+      color: #3fb950;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      letter-spacing: 0.03em;
+      width: fit-content;
+    }
+
+    /* Loading spinner */
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #ffffff44;
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>SecondOpinion</h1>
+    <p>Can you trust your AI's explanation?</p>
+  </header>
+
+  <div class="card">
+    <label for="codeInput">Paste your code snippet</label>
+    <textarea id="codeInput" placeholder="// paste code here…" spellcheck="false"></textarea>
+
+    <div class="row">
+      <div class="field">
+        <label for="langSelect">Language</label>
+        <select id="langSelect">
+          <option value="javascript">JavaScript</option>
+          <option value="python">Python</option>
+          <option value="java">Java</option>
+          <option value="typescript">TypeScript</option>
+          <option value="go">Go</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <button id="checkBtn" onclick="runCheck()">Check Stability</button>
+    </div>
+  </div>
+
+  <div id="error"></div>
+
+  <div id="demoBadge" class="demo-badge">⚙ Demo mode — sample analysis</div>
+
+  <div id="results">
+    <div class="score-card">
+      <div class="score-number" id="scoreNum"></div>
+      <div class="score-meta">
+        <div class="verdict" id="verdictLabel"></div>
+        <div class="verdict-sub" id="verdictSub"></div>
+      </div>
+    </div>
+
+    <div class="section-title">Flagged Contradictions</div>
+    <ul class="contradictions-list" id="contradictionsList"></ul>
+
+    <div class="section-title">Explanations</div>
+    <div class="panels">
+      <details id="panelFunctionality">
+        <summary>Functionality</summary>
+        <div class="panel-body" id="bodyFunctionality"></div>
+      </details>
+      <details id="panelSecurity">
+        <summary>Security</summary>
+        <div class="panel-body" id="bodySecurity"></div>
+      </details>
+      <details id="panelBeginner">
+        <summary>Beginner-friendly</summary>
+        <div class="panel-body" id="bodyBeginner"></div>
+      </details>
+    </div>
+  </div>
+
+  <script>
+    async function runCheck() {
+      const code = document.getElementById("codeInput").value.trim();
+      const language = document.getElementById("langSelect").value;
+      const btn = document.getElementById("checkBtn");
+      const errorBox = document.getElementById("error");
+      const results = document.getElementById("results");
+
+      errorBox.style.display = "none";
+      results.style.display = "none";
+
+      if (!code) {
+        errorBox.textContent = "Please paste a code snippet before checking.";
+        errorBox.style.display = "block";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Checking…';
+
+      try {
+        const res = await fetch("/api/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code, language }),
+        });
+
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        const data = await res.json();
+        renderResults(data);
+      } catch (err) {
+        errorBox.textContent = "Something went wrong: " + err.message;
+        errorBox.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Check Stability";
+      }
+    }
+
+    function renderResults(data) {
+      // Show/hide the demo badge
+      document.getElementById("demoBadge").style.display = data.demo ? "block" : "none";
+
+      const score = data.score;
+
+      // Score number + color
+      const scoreEl = document.getElementById("scoreNum");
+      scoreEl.textContent = score;
+      scoreEl.className = "score-number " + (score >= 80 ? "green" : score >= 50 ? "yellow" : "red");
+
+      // Verdict
+      document.getElementById("verdictLabel").textContent = data.verdict;
+      document.getElementById("verdictSub").textContent =
+        score >= 80
+          ? "The three AI perspectives are broadly consistent."
+          : score >= 50
+          ? "Some inconsistencies detected between AI perspectives."
+          : "Significant disagreements found — treat explanations with care.";
+
+      // Contradictions
+      const list = document.getElementById("contradictionsList");
+      list.innerHTML = "";
+      (data.contradictions || []).forEach((c) => {
+        const li = document.createElement("li");
+        li.innerHTML = `<span class="contradiction-dot"></span><span>${c}</span>`;
+        list.appendChild(li);
+      });
+
+      // Explanation panels
+      document.getElementById("bodyFunctionality").textContent = data.explanations.functionality;
+      document.getElementById("bodySecurity").textContent = data.explanations.security;
+      document.getElementById("bodyBeginner").textContent = data.explanations.beginner;
+
+      document.getElementById("results").style.display = "block";
+      document.getElementById("results").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  </script>
+
+</body>
+</html>
