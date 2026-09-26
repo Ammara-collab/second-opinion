@@ -41,12 +41,15 @@ Then open **http://localhost:5000** in your browser.
 
 ## Demo Mode
 
-**No API key required.** If `OPENAI_API_KEY` is not set in your environment, the app runs in demo mode and returns a pre-built sample analysis so you can explore the full UI immediately.
+**No API key required.** If `GEMINI_API_KEY` is not set in your environment, the app runs in demo mode and returns a pre-built sample analysis so you can explore the full UI immediately.
 
-To use a real OpenAI key:
+To use a real Gemini key:
+
+1. Get a free API key from **[aistudio.google.com/apikey](https://aistudio.google.com/apikey)**
+2. Set the environment variable and start the app:
 
 ```bash
-export OPENAI_API_KEY=sk-...
+export GEMINI_API_KEY=AIza...
 python app.py
 ```
 
@@ -57,7 +60,7 @@ python app.py
 | Layer | Technology |
 |---|---|
 | Backend | Python 3, Flask |
-| LLM | OpenAI API (`gpt-4o-mini` by default) |
+| LLM | Google Gemini API (`gemini-2.0-flash`) |
 | Concurrency | `concurrent.futures.ThreadPoolExecutor` (3 parallel agents) |
 | Frontend | Vanilla HTML/CSS/JS (no build step) |
 

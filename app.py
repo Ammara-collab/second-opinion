@@ -2,7 +2,7 @@ import os
 import json
 import concurrent.futures
 from flask import Flask, request, jsonify, render_template
-from openai import OpenAI
+import google.generativeai as genai
 
 app = Flask(__name__)
 
@@ -10,18 +10,20 @@ app = Flask(__name__)
 # LLM helper
 # ---------------------------------------------------------------------------
 
-def _chat(client: OpenAI, system: str, user: str) -> str:
-    """Single blocking chat completion. Returns the assistant text."""
-    resp = client.chat.completions.create(
-        model=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
-        temperature=0.3,
-        max_tokens=512,
+def _chat(system: str, user: str) -> str:
+    """Single blocking chat completion via Gemini. Returns the assistant text."""
+    model = genai.GenerativeModel(
+        model_name="gemini-2.0-flash",
+        system_instruction=system,
     )
-    return resp.choices[0].message.content.strip()
+    resp = model.generate_content(
+        user,
+        generation_config=genai.types.GenerationConfig(
+            temperature=0.3,
+            max_output_tokens=512,
+        ),
+    )
+    return resp.text.strip()
 
 
 # ---------------------------------------------------------------------------
@@ -52,18 +54,18 @@ _BEGINNER_SYSTEM = (
 )
 
 
-def _agent_functionality(client: OpenAI, code: str, language: str) -> str:
-    return _chat(client, _FUNCTIONALITY_SYSTEM,
+def _agent_functionality(code: str, language: str) -> str:
+    return _chat(_FUNCTIONALITY_SYSTEM,
                  f"Language: {language}\n\n```\n{code}\n```")
 
 
-def _agent_security(client: OpenAI, code: str, language: str) -> str:
-    return _chat(client, _SECURITY_SYSTEM,
+def _agent_security(code: str, language: str) -> str:
+    return _chat(_SECURITY_SYSTEM,
                  f"Language: {language}\n\n```\n{code}\n```")
 
 
-def _agent_beginner(client: OpenAI, code: str, language: str) -> str:
-    return _chat(client, _BEGINNER_SYSTEM,
+def _agent_beginner(code: str, language: str) -> str:
+    return _chat(_BEGINNER_SYSTEM,
                  f"Language: {language}\n\n```\n{code}\n```")
 
 
@@ -100,7 +102,6 @@ _JUDGE_SYSTEM = (
 
 
 def _agent_judge(
-    client: OpenAI,
     functionality: str,
     security: str,
     beginner: str,
@@ -110,7 +111,7 @@ def _agent_judge(
         f"Security explanation:\n{security}\n\n"
         f"Beginner explanation:\n{beginner}"
     )
-    raw = _chat(client, _JUDGE_SYSTEM, user_msg)
+    raw = _chat(_JUDGE_SYSTEM, user_msg)
 
     # Strip markdown code fences if the model wraps its JSON
     if raw.startswith("```"):
@@ -132,7 +133,7 @@ def index():
 
 
 # ---------------------------------------------------------------------------
-# Demo-mode sample response (used when OPENAI_API_KEY is not set)
+# Demo-mode sample response (used when GEMINI_API_KEY is not set)
 # ---------------------------------------------------------------------------
 
 _DEMO_RESPONSE = {
@@ -193,27 +194,28 @@ def check():
     if not code:
         return jsonify({"error": "No code provided"}), 400
 
-    api_key = os.environ.get("OPENAI_API_KEY")
+    api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         return jsonify(_DEMO_RESPONSE)
 
-    client = OpenAI(api_key=api_key)
+    genai.configure(api_key=api_key)
 
     # ── Step 1: run the three specialist agents IN PARALLEL ──────────────────
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
-        fut_func = pool.submit(_agent_functionality, client, code, language)
-        fut_sec  = pool.submit(_agent_security,      client, code, language)
-        fut_beg  = pool.submit(_agent_beginner,      client, code, language)
+        fut_func = pool.submit(_agent_functionality, code, language)
+        fut_sec  = pool.submit(_agent_security,      code, language)
+        fut_beg  = pool.submit(_agent_beginner,      code, language)
 
         functionality = fut_func.result()
         security      = fut_sec.result()
         beginner      = fut_beg.result()
 
     # ── Step 2: judge agent cross-checks all three ───────────────────────────
-    judgment = _agent_judge(client, functionality, security, beginner)
+    judgment = _agent_judge(functionality, security, beginner)
 
     # ── Step 3: return the combined result ───────────────────────────────────
     return jsonify({
+        "demo":          False,
         "score":         judgment["score"],
         "verdict":       judgment["verdict"],
         "contradictions": judgment.get("contradictions", []),
