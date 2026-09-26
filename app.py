@@ -14,7 +14,7 @@ app = Flask(__name__)
 _GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash-lite")
 
 
-def _chat(system: str, user: str) -> str:
+def _chat(system: str, user: str, temperature: float = 0.3) -> str:
     """Single blocking chat completion via Gemini. Returns the assistant text."""
     model = genai.GenerativeModel(
         model_name=_GEMINI_MODEL,
@@ -23,7 +23,7 @@ def _chat(system: str, user: str) -> str:
     resp = model.generate_content(
         user,
         generation_config=genai.types.GenerationConfig(
-            temperature=0.3,
+            temperature=temperature,
             max_output_tokens=2048,
         ),
     )
@@ -60,17 +60,20 @@ _BEGINNER_SYSTEM = (
 
 def _agent_functionality(code: str, language: str) -> str:
     return _chat(_FUNCTIONALITY_SYSTEM,
-                 f"Language: {language}\n\n```\n{code}\n```")
+                 f"Language: {language}\n\n```\n{code}\n```",
+                 temperature=0.8)
 
 
 def _agent_security(code: str, language: str) -> str:
     return _chat(_SECURITY_SYSTEM,
-                 f"Language: {language}\n\n```\n{code}\n```")
+                 f"Language: {language}\n\n```\n{code}\n```",
+                 temperature=0.8)
 
 
 def _agent_beginner(code: str, language: str) -> str:
     return _chat(_BEGINNER_SYSTEM,
-                 f"Language: {language}\n\n```\n{code}\n```")
+                 f"Language: {language}\n\n```\n{code}\n```",
+                 temperature=0.8)
 
 
 # ---------------------------------------------------------------------------
@@ -133,7 +136,7 @@ def _agent_judge(
         f"Security explanation:\n{security}\n\n"
         f"Beginner explanation:\n{beginner}"
     )
-    raw = _chat(_JUDGE_SYSTEM, user_msg)
+    raw = _chat(_JUDGE_SYSTEM, user_msg, temperature=0.2)
 
     # Strip markdown code fences if the model wraps its JSON
     if raw.startswith("```"):
