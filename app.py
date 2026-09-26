@@ -83,23 +83,41 @@ _JUDGE_SYSTEM = (
     "Functionality, Security, and Beginner. "
     "Your job:\n"
     "1. Extract the key factual claims from each explanation.\n"
-    "2. Cross-check those claims against each other and identify "
-    "CONTRADICTIONS — places where two explanations make claims that "
-    "directly disagree.\n"
-    "3. Compute a Stability Score (integer 0–100): start at 100, subtract "
-    "25 for each MAJOR contradiction (a direct factual disagreement), "
-    "subtract 10 for each MINOR contradiction (vague or hedged disagreement), "
-    "floor at 0.\n"
+    "2. Cross-check those claims against each other and identify both:\n"
+    "   - MAJOR contradictions: direct, explicit factual conflicts where "
+    "one explanation states X happens and another states X does NOT happen "
+    "(e.g. 'Functionality says passwords are hashed; Security says they are "
+    "stored as plain text'). Subtract 25 each.\n"
+    "   - MINOR contradictions: tensions between perspectives where "
+    "explanations are not logically incompatible but paint meaningfully "
+    "different pictures of the same code. Specifically flag as MINOR "
+    "contradictions:\n"
+    "     * The Functionality explanation describes the code as working "
+    "correctly or successfully, while the Security explanation labels the "
+    "same behavior insecure, vulnerable, bypassable, or broken.\n"
+    "     * The Functionality explanation says the code performs or returns "
+    "X, while the Beginner explanation says it performs or returns something "
+    "different.\n"
+    "     * Any explanation claims the code is safe, robust, or complete "
+    "while another says it lacks validation, allows injection, or can be "
+    "exploited.\n"
+    "   Subtract 10 for each MINOR contradiction.\n"
+    "3. Compute a Stability Score (integer 0-100): start at 100, apply all "
+    "subtractions from step 2, floor at 0.\n"
     "4. Set the verdict: 'Trustworthy' if score >= 80, "
-    "'Use with Caution' if 50–79, 'Unreliable' if below 50.\n"
+    "'Use with Caution' if 50-79, 'Unreliable' if below 50.\n"
     "5. Write each contradiction in plain, non-technical English, e.g. "
-    "'Explanation 1 says the password is stored safely, but Explanation 2 "
-    "says it is stored as plain text.'\n\n"
+    "'The functionality explanation says the code builds queries safely, but "
+    "the security explanation says the same query is vulnerable to "
+    "SQL injection.'\n\n"
     "Respond with ONLY valid JSON in this exact shape:\n"
     "{\n"
     '  "score": <integer 0-100>,\n'
     '  "verdict": "<Trustworthy|Use with Caution|Unreliable>",\n'
-    '  "contradictions": ["<plain-English description>", ...]\n'
+    '  "contradictions": [\n'
+    '    {"severity": "<major|minor>", "description": "<plain-English description>"},\n'
+    '    ...\n'
+    '  ]\n'
     "}\n"
     "If there are no contradictions, return an empty array for contradictions."
 )
@@ -142,18 +160,32 @@ def index():
 
 _DEMO_RESPONSE = {
     "demo": True,
-    "score": 62,
-    "verdict": "Use with Caution",
+    "score": 40,
+    "verdict": "Unreliable",
     "contradictions": [
-        (
-            "The functionality explanation says user passwords are hashed with bcrypt "
-            "before being stored, but the security explanation says passwords are saved "
-            "as plain text directly in the database."
-        ),
-        (
-            "The functionality explanation says the function returns True on a successful "
-            "login, but the beginner explanation says it returns a session token string."
-        ),
+        {
+            "severity": "major",
+            "description": (
+                "The functionality explanation says user passwords are hashed with bcrypt "
+                "before being stored, but the security explanation says passwords are saved "
+                "as plain text directly in the database."
+            ),
+        },
+        {
+            "severity": "major",
+            "description": (
+                "The functionality explanation says the function returns True on a successful "
+                "login, but the beginner explanation says it returns a session token string."
+            ),
+        },
+        {
+            "severity": "minor",
+            "description": (
+                "The functionality explanation describes the login as working correctly, "
+                "but the security explanation says the same code is vulnerable to "
+                "brute-force attacks and leaks account existence information."
+            ),
+        },
     ],
     "explanations": {
         "functionality": (

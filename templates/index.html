@@ -192,10 +192,12 @@
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #f85149;
       flex-shrink: 0;
       margin-top: 6px;
     }
+
+    .contradiction-dot.major { background: #f85149; }
+    .contradiction-dot.minor { background: #d29922; }
 
     /* Collapsible panels */
     .panels { display: flex; flex-direction: column; gap: 10px; }
@@ -416,8 +418,10 @@
       const list = document.getElementById("contradictionsList");
       list.innerHTML = "";
       (data.contradictions || []).forEach((c) => {
+        const severity = (c.severity || "major").toLowerCase();
+        const description = c.description || c;
         const li = document.createElement("li");
-        li.innerHTML = `<span class="contradiction-dot"></span><span>${c}</span>`;
+        li.innerHTML = `<span class="contradiction-dot ${severity}" title="${severity} contradiction"></span><span>${description}</span>`;
         list.appendChild(li);
       });
 
