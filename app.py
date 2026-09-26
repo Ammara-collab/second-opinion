@@ -20,7 +20,7 @@ def _chat(system: str, user: str) -> str:
         user,
         generation_config=genai.types.GenerationConfig(
             temperature=0.3,
-            max_output_tokens=512,
+            max_output_tokens=2048,
         ),
     )
     return resp.text.strip()
