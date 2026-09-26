@@ -3,6 +3,7 @@ import json
 import concurrent.futures
 from flask import Flask, request, jsonify, render_template
 import google.generativeai as genai
+from google.api_core.exceptions import ResourceExhausted
 
 app = Flask(__name__)
 
@@ -10,10 +11,13 @@ app = Flask(__name__)
 # LLM helper
 # ---------------------------------------------------------------------------
 
+_GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash-lite")
+
+
 def _chat(system: str, user: str) -> str:
     """Single blocking chat completion via Gemini. Returns the assistant text."""
     model = genai.GenerativeModel(
-        model_name="gemini-3.8-flash",
+        model_name=_GEMINI_MODEL,
         system_instruction=system,
     )
     resp = model.generate_content(
@@ -200,18 +204,25 @@ def check():
 
     genai.configure(api_key=api_key)
 
-    # ── Step 1: run the three specialist agents IN PARALLEL ──────────────────
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
-        fut_func = pool.submit(_agent_functionality, code, language)
-        fut_sec  = pool.submit(_agent_security,      code, language)
-        fut_beg  = pool.submit(_agent_beginner,      code, language)
+    try:
+        # ── Step 1: run the three specialist agents IN PARALLEL ──────────────
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
+            fut_func = pool.submit(_agent_functionality, code, language)
+            fut_sec  = pool.submit(_agent_security,      code, language)
+            fut_beg  = pool.submit(_agent_beginner,      code, language)
 
-        functionality = fut_func.result()
-        security      = fut_sec.result()
-        beginner      = fut_beg.result()
+            functionality = fut_func.result()
+            security      = fut_sec.result()
+            beginner      = fut_beg.result()
 
-    # ── Step 2: judge agent cross-checks all three ───────────────────────────
-    judgment = _agent_judge(functionality, security, beginner)
+        # ── Step 2: judge agent cross-checks all three ───────────────────────
+        judgment = _agent_judge(functionality, security, beginner)
+
+    except ResourceExhausted:
+        return jsonify({
+            "error": "quota_exhausted",
+            "message": "Daily AI quota reached — please try again tomorrow.",
+        }), 429
 
     # ── Step 3: return the combined result ───────────────────────────────────
     return jsonify({

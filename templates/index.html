@@ -374,6 +374,12 @@
           body: JSON.stringify({ code, language }),
         });
 
+        if (res.status === 429) {
+          const data = await res.json();
+          errorBox.textContent = data.message || "Daily AI quota reached — please try again tomorrow.";
+          errorBox.style.display = "block";
+          return;
+        }
         if (!res.ok) throw new Error(`Server error: ${res.status}`);
         const data = await res.json();
         renderResults(data);

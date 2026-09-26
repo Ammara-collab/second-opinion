@@ -53,6 +53,12 @@ export GEMINI_API_KEY=AIza...
 python app.py
 ```
 
+The default model is `gemini-2.0-flash-lite`, which has a generous free tier (500 requests/day). Each stability check uses 4 requests (3 parallel agents + 1 judge), so the free quota covers ~125 checks/day. To use a different model without a code change, set `GEMINI_MODEL`:
+
+```bash
+export GEMINI_MODEL=gemini-1.5-flash
+```
+
 ---
 
 ## Tech Stack
@@ -60,7 +66,7 @@ python app.py
 | Layer | Technology |
 |---|---|
 | Backend | Python 3, Flask |
-| LLM | Google Gemini API (`gemini-3.8-flash`) |
+| LLM | Google Gemini API (`gemini-2.0-flash-lite`, configurable via `GEMINI_MODEL`) |
 | Concurrency | `concurrent.futures.ThreadPoolExecutor` (3 parallel agents) |
 | Frontend | Vanilla HTML/CSS/JS (no build step) |
 
